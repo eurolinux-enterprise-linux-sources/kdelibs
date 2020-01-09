@@ -4,7 +4,7 @@
 
 Summary: K Desktop Environment 4 - Libraries
 Version: 4.3.4
-Release: 23%{?dist}
+Release: 24%{?dist}
 
 Name: kdelibs
 Epoch: 6
@@ -128,6 +128,10 @@ Patch205: kdelibs-4.3.4-preserve-env-vars.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=1105542
 # 1105542 - The kate editor does not retain printing preferences
 Patch206: kdelibs-4.3.4-kate-print-options.patch
+
+# https://bugzilla.redhat.com/show_bug.cgi?id=1281742
+# plasma-desktop sometimes crashes while hovering over application icon in taskbar
+Patch207: kdelibs-do-not-crash-plasma-desktop-while-hovering-over-application-in-taskbar.patch
 
 # security fix
 Patch300: kdelibs-4.3.1-CVE-2009-2702.patch
@@ -270,6 +274,7 @@ format for easy browsing.
 %patch204 -p1 -b .dualheadWallpaper
 %patch205 -p1 -b .preserveenvvars
 %patch206 -p1 -b .kateprintoptions
+%patch207 -p1 -b .do-not-crash-plasma-desktop-while-hovering-over-application-in-taskbar
 
 # security fixes
 %patch300 -p1 -b .CVE-2009-2702
@@ -467,12 +472,15 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Tue Jan 05 2016 Grulich <jgrulich@redhat.com> - 6:4.3.4-24
+- Resolves: rhbz:1293573 - do not crash plasma-desktop while hovering over application in taskbar
+
 * Wed Mar 25 2015 Lukáš Tinkl <ltinkl@redhat.com> - 6:4.3.4-23
-- Resolves: rhbz#1206181 - The kate editor does not retain 
+- Resolves: rhbz#1105542 - The kate editor does not retain 
   printing preferences
 
 * Wed Mar 25 2015 Lukáš Tinkl <ltinkl@redhat.com> - 6:4.3.4-22
-- Resolves rhbz#1206180 - Opening a terminal in Konqueror / Dolphin does not 
+- Resolves rhbz#1088925 - Opening a terminal in Konqueror / Dolphin does not 
   inherit environment variables
 
 * Mon Jul 02 2014 Daniel Vrátil <dvratil@redhat.com> - 6:4.3.4-21
