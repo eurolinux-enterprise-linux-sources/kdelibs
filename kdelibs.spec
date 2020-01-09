@@ -4,7 +4,7 @@
 
 Summary: K Desktop Environment 4 - Libraries
 Version: 4.3.4
-Release: 20%{?dist}.1
+Release: 21%{?dist}
 
 Name: kdelibs
 Epoch: 6
@@ -116,6 +116,10 @@ Patch202: kdelibs-4.3.4-printing.patch
 # http://websvn.kde.org/?view=revision&revision=1089160
 # critical performance fix
 Patch203: kdelibs-4.3.4-performance-khtmlview.patch
+
+# https://bugzilla.redhat.com/show_bug.cgi?id=1025417
+# Wallpaper does not apply on both screens when on dual head
+Patch204: kdelibs-4.4-bz#1025417.patch
 
 # security fix
 Patch300: kdelibs-4.3.1-CVE-2009-2702.patch
@@ -255,6 +259,7 @@ format for easy browsing.
 %patch201 -p1 -b .sonnet
 %patch202 -p1 -b .printing
 %patch203 -p1 -b .performance
+%patch204 -p1 -b .dualheadWallpaper
 
 # security fixes
 %patch300 -p1 -b .CVE-2009-2702
@@ -452,8 +457,8 @@ rm -rf %{buildroot}
 
 
 %changelog
-* Tue Jun 11 2013 Than Ngo <than@redhat.com> - 6:4.3.4-20.1
-- add missing Buildrequires on libXdmcp
+* Mon Jul 02 2014 Daniel Vrátil <dvratil@redhat.com> - 6:4.3.4-21
+- Resolves bz#1025417, wallpaper not applied on second screen when on dualhead
 
 * Mon Jun 10 2013 Than Ngo <than@redhat.com> - 6:4.3.4-20
 - Resolves: bz#882895, crash when switching activity of 2 desktops from activity applet
