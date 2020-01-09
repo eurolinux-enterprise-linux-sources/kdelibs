@@ -1,0 +1,408 @@
+diff -rupN kdelibs-4.3.4/plasma/widgets/tabbar.cpp kdelibs-4.3.4-patched/plasma/widgets/tabbar.cpp
+--- kdelibs-4.3.4/plasma/widgets/tabbar.cpp	2009-10-02 13:48:10.000000000 +0530
++++ kdelibs-4.3.4-patched/plasma/widgets/tabbar.cpp	2012-12-03 18:46:27.067707572 +0530
+@@ -32,6 +32,7 @@
+ #include <kdebug.h>
+ 
+ #include <plasma/animator.h>
++#include <plasma/theme.h>
+ 
+ #include "private/nativetabbar_p.h"
+ 
+@@ -75,7 +76,8 @@ public:
+           oldPage(0),
+           newPage(0),
+           oldPageAnimId(-1),
+-          newPageAnimId(-1)
++          newPageAnimId(-1),
++          customFont(false)
+     {
+     }
+ 
+@@ -86,6 +88,7 @@ public:
+     void updateTabWidgetMode();
+     void slidingCompleted(QGraphicsItem *item);
+     void shapeChanged(const KTabBar::Shape shape);
++    void setPalette();
+ 
+     TabBar *q;
+     TabBarProxy *tabProxy;
+@@ -100,6 +103,7 @@ public:
+     QGraphicsWidget *newPage;
+     int oldPageAnimId;
+     int newPageAnimId;
++    bool customFont;
+ };
+ 
+ void TabBarPrivate::updateTabWidgetMode()
+@@ -141,6 +145,8 @@ void TabBarPrivate::slidingCompleted(QGr
+         if (item == newPage) {
+             tabWidgetLayout->addItem(newPage);
+             newPageAnimId = -1;
++            mainLayout->invalidate();
++            emit q->currentChanged(currentIndex);
+         } else {
+             oldPageAnimId = -1;
+             item->hide();
+@@ -185,13 +191,34 @@ void TabBarPrivate::shapeChanged(const Q
+     tabProxy->setPreferredSize(tabProxy->native->sizeHint());
+ }
+ 
++void TabBarPrivate::setPalette()
++{
++    QTabBar *native = q->nativeWidget();
++    QColor color = Plasma::Theme::defaultTheme()->color(Plasma::Theme::TextColor);
++    QPalette p = native->palette();
++
++    p.setColor(QPalette::Normal, QPalette::Text, color);
++    p.setColor(QPalette::Inactive, QPalette::Text, color);
++    p.setColor(QPalette::Normal, QPalette::ButtonText, color);
++    p.setColor(QPalette::Inactive, QPalette::ButtonText, color);
++    p.setColor(QPalette::Normal, QPalette::Base, QColor(0,0,0,0));
++    p.setColor(QPalette::Inactive, QPalette::Base, QColor(0,0,0,0));
++    native->setPalette(p);
++
++    if (!customFont) {
++        q->nativeWidget()->setFont(Plasma::Theme::defaultTheme()->font(Plasma::Theme::DefaultFont));
++    }
++}
++
+ TabBar::TabBar(QGraphicsWidget *parent)
+     : QGraphicsWidget(parent),
+       d(new TabBarPrivate(this))
+ {
++    setContentsMargins(0,0,0,0);
+     d->tabProxy = new TabBarProxy(this);
+     d->tabWidgetLayout = new QGraphicsLinearLayout(Qt::Vertical);
+     d->tabBarLayout = new QGraphicsLinearLayout(Qt::Horizontal);
++    d->tabWidgetLayout->setContentsMargins(0,0,0,0);
+ 
+     d->mainLayout = new QGraphicsLinearLayout(Qt::Horizontal);
+     d->mainLayout->addItem(d->tabWidgetLayout);
+@@ -205,6 +232,7 @@ TabBar::TabBar(QGraphicsWidget *parent)
+     d->tabBarLayout->addStretch();
+     d->tabBarLayout->addItem(d->tabProxy);
+     d->tabBarLayout->addStretch();
++    d->tabBarLayout->setContentsMargins(0,0,0,0);
+     //d->tabBarLayout->setStretchFactor(d->tabProxy, 2);
+ 
+     connect(d->tabProxy->native, SIGNAL(currentChanged(int)),
+@@ -213,6 +241,7 @@ TabBar::TabBar(QGraphicsWidget *parent)
+             this, SLOT(shapeChanged(QTabBar::Shape)));
+     connect(Plasma::Animator::self(), SIGNAL(movementFinished(QGraphicsItem*)),
+             this, SLOT(slidingCompleted(QGraphicsItem*)));
++    connect(Theme::defaultTheme(),SIGNAL(themeChanged()),this,SLOT(setPalette()));
+ }
+ 
+ TabBar::~TabBar()
+@@ -225,13 +254,15 @@ int TabBar::insertTab(int index, const Q
+                       QGraphicsLayoutItem *content)
+ {
+     QGraphicsWidget *page = new QGraphicsWidget(this);
+-    page->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
++    page->setContentsMargins(0,0,0,0);
++    page->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+     if (content) {
+         if (content->isLayout()) {
+             page->setLayout(static_cast<QGraphicsLayout *>(content));
+         } else {
+             QGraphicsLinearLayout *layout = new QGraphicsLinearLayout(Qt::Vertical, page);
+-            layout->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
++            layout->setContentsMargins(0,0,0,0);
++            layout->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+             layout->addItem(content);
+             page->setLayout(layout);
+         }
+@@ -299,24 +330,20 @@ void TabBar::setCurrentIndex(int index)
+         return;
+     }
+ 
+-    d->tabWidgetLayout->removeAt(1);
+-
+     if (d->currentIndex >= 0) {
+         d->oldPage = d->pages[d->currentIndex];
+     } else {
+         d->oldPage = 0;
+     }
+ 
++    d->tabWidgetLayout->removeItem(d->oldPage);
++
+     if (index >= 0) {
+         d->newPage = d->pages[index];
+     } else {
+         d->newPage = 0;
+     }
+ 
+-    if (d->newPage && d->oldPage) {
+-        d->newPage->resize(d->oldPage->size());
+-    }
+-
+     setFlags(QGraphicsItem::ItemClipsChildrenToShape);
+ 
+     //if an animation was in rogress hide everything to avoid an inconsistent state
+@@ -343,19 +370,26 @@ void TabBar::setCurrentIndex(int index)
+     }
+ 
+     if (d->newPage && d->oldPage) {
++        //FIXME: it seems necessary to resiz the thing 2 times to have effect
++        d->newPage->resize(1,1);
++        d->newPage->resize(d->oldPage->size());
++
+         QRect beforeCurrentGeom(d->oldPage->geometry().toRect());
+         beforeCurrentGeom.moveTopRight(beforeCurrentGeom.topLeft());
+ 
+-        d->newPageAnimId = Animator::self()->moveItem(
+-            d->newPage, Plasma::Animator::SlideOutMovement,
+-            d->oldPage->pos().toPoint());
+         if (index > d->currentIndex) {
+             d->newPage->setPos(d->oldPage->geometry().topRight());
++            d->newPageAnimId = Animator::self()->moveItem(
++            d->newPage, Plasma::Animator::SlideOutMovement,
++            d->oldPage->pos().toPoint());
+             d->oldPageAnimId = Animator::self()->moveItem(
+                 d->oldPage, Plasma::Animator::SlideOutMovement,
+                 beforeCurrentGeom.topLeft());
+         } else {
+             d->newPage->setPos(beforeCurrentGeom.topLeft());
++            d->newPageAnimId = Animator::self()->moveItem(
++            d->newPage, Plasma::Animator::SlideOutMovement,
++            d->oldPage->pos().toPoint());
+             d->oldPageAnimId = Animator::self()->moveItem(
+                 d->oldPage, Plasma::Animator::SlideOutMovement,
+                 d->oldPage->geometry().topRight().toPoint());
+@@ -365,7 +399,7 @@ void TabBar::setCurrentIndex(int index)
+     }
+ 
+     d->currentIndex = index;
+-    emit currentChanged(index);
++
+     d->tabProxy->native->setCurrentIndex(index);
+ }
+ 
+@@ -376,7 +410,7 @@ int TabBar::count() const
+ 
+ void TabBar::removeTab(int index)
+ {
+-    if (index > d->pages.count()) {
++    if (index >= d->pages.count()) {
+         return;
+     }
+ 
+@@ -401,9 +435,71 @@ void TabBar::removeTab(int index)
+     d->tabProxy->setPreferredSize(d->tabProxy->native->sizeHint());
+ }
+ 
++QGraphicsLayoutItem *TabBar::takeTab(int index)
++{
++    if (index >= d->pages.count()) {
++        return 0;
++    }
++
++    int oldCurrentIndex = d->tabProxy->native->currentIndex();
++    d->tabProxy->native->removeTab(index);
++    QGraphicsWidget *page = d->pages.takeAt(index);
++
++    int currentIndex = d->tabProxy->native->currentIndex();
++
++    if (oldCurrentIndex == index) {
++        d->tabWidgetLayout->removeAt(1);
++    }
++
++    QGraphicsLayoutItem *returnItem = 0;
++    QGraphicsLayout *lay = page->layout();
++    if (lay && lay->count() == 1) {
++        returnItem = lay->itemAt(0);
++        lay->removeAt(0);
++    } else {
++        returnItem = lay;
++    }
++
++    if (returnItem) {
++        returnItem->setParentLayoutItem(0);
++    }
++
++    page->setLayout(0);
++    scene()->removeItem(page);
++    page->deleteLater();
++
++    if (oldCurrentIndex != currentIndex) {
++        setCurrentIndex(currentIndex);
++    }
++
++    d->updateTabWidgetMode();
++    d->tabProxy->setPreferredSize(d->tabProxy->native->sizeHint());
++
++    return returnItem;
++}
++
++QGraphicsLayoutItem *TabBar::tabAt(int index)
++{
++    if (index >= d->pages.count()) {
++        return 0;
++    }
++
++    QGraphicsWidget *page = d->pages.value(index);
++
++    QGraphicsLayoutItem *returnItem = 0;
++    QGraphicsLayout *lay = page->layout();
++    if (lay && lay->count() == 1) {
++        returnItem = lay->itemAt(0);
++    } else {
++        returnItem = lay;
++    }
++
++    return returnItem;
++}
++
+ void TabBar::setTabText(int index, const QString &label)
+ {
+-    if (index > d->pages.count()) {
++    if (index >= d->pages.count()) {
+         return;
+     }
+ 
+@@ -433,10 +529,10 @@ void TabBar::setTabBarShown(bool show)
+ 
+     if (!show && d->tabProxy->isVisible()) {
+         d->tabProxy->hide();
+-        d->tabBarLayout->removeItem(d->tabProxy);
++        d->tabBarLayout->removeItem(d->tabBarLayout);
+     } else if (show && !d->tabProxy->isVisible()) {
+         d->tabProxy->show();
+-        d->tabBarLayout->insertItem(0, d->tabProxy);
++        d->tabBarLayout->insertItem(0, d->tabBarLayout);
+     }
+ }
+ 
+@@ -466,6 +562,16 @@ void TabBar::wheelEvent(QGraphicsSceneWh
+     //Still here for binary compatibility
+ }
+ 
++void TabBar::changeEvent(QEvent *event)
++{
++    if (event->type() == QEvent::FontChange) {
++        d->customFont = true;
++        nativeWidget()->setFont(font());
++    }
++
++    QGraphicsWidget::changeEvent(event);
++}
++
+ } // namespace Plasma
+ 
+ #include <tabbar.moc>
+diff -rupN kdelibs-4.3.4/plasma/widgets/tabbar.h kdelibs-4.3.4-patched/plasma/widgets/tabbar.h
+--- kdelibs-4.3.4/plasma/widgets/tabbar.h	2009-02-04 23:51:10.000000000 +0530
++++ kdelibs-4.3.4-patched/plasma/widgets/tabbar.h	2012-12-03 17:12:29.130240450 +0530
+@@ -73,7 +73,7 @@ public:
+      * @arg content the page content that will be shown by this tab
+      * @return the index of the inserted tab
+      */
+-    int insertTab(int index, const QIcon &icon, const QString &label,
++    Q_INVOKABLE int insertTab(int index, const QIcon &icon, const QString &label,
+                   QGraphicsLayoutItem *content = 0);
+ 
+     /**
+@@ -88,7 +88,7 @@ public:
+      * @arg content the page content that will be shown by this tab
+      * @return the index of the inserted tab
+      */
+-    int insertTab(int index, const QString &label, QGraphicsLayoutItem *content = 0);
++    Q_INVOKABLE int insertTab(int index, const QString &label, QGraphicsLayoutItem *content = 0);
+ 
+     /**
+      * Adds a new tab in the last position
+@@ -98,7 +98,7 @@ public:
+      * @arg content the page content that will be shown by this tab
+      * @return the index of the inserted tab
+      */
+-    int addTab(const QIcon &icon, const QString &label, QGraphicsLayoutItem *content = 0);
++    Q_INVOKABLE int addTab(const QIcon &icon, const QString &label, QGraphicsLayoutItem *content = 0);
+ 
+     /**
+      * Adds a new tab in the last position
+@@ -109,14 +109,30 @@ public:
+      * @arg content the page content that will be shown by this tab
+      * @return the index of the inserted tab
+      */
+-    int addTab(const QString &label, QGraphicsLayoutItem *content = 0);
++    Q_INVOKABLE int addTab(const QString &label, QGraphicsLayoutItem *content = 0);
+ 
+     /**
+-     * Removes a tab
++     * Removes a tab, contents are deleted
+      *
+      * @arg index the index of the tab to remove
+      */
+-    void removeTab(int index);
++    Q_INVOKABLE void removeTab(int index);
++    
++    /** 
++     * Removes a tab, the page is reparented to 0 and is returned
++     *
++     * @arg index the index of the tab to remove
++     * @since 4.4
++     */
++    Q_INVOKABLE QGraphicsLayoutItem *takeTab(int index);
++
++    /** 
++     * Returns the contents of a page
++     *
++     * @arg index the index of the tab to retrieve
++     * @since 4.4
++     */
++    Q_INVOKABLE QGraphicsLayoutItem *tabAt(int index);
+ 
+     /**
+      * @return the index of the tab currently active
+@@ -134,14 +150,14 @@ public:
+      * @arg index the index of the tab to modify
+      * @arg label the new text label of the given tab
+      */
+-    void setTabText(int index, const QString &label);
++    Q_INVOKABLE void setTabText(int index, const QString &label);
+ 
+     /**
+      * @return the text label of the given tab
+      *
+      * @arg index the index of the tab we want to know its label
+      */
+-    QString tabText(int index) const;
++    Q_INVOKABLE QString tabText(int index) const;
+ 
+     /**
+      * Sets an icon for a given tab
+@@ -149,14 +165,14 @@ public:
+      * @arg index the index of the tab to modify
+      * @arg icon the new icon for the given tab
+      */
+-    void setTabIcon(int index, const QIcon &icon);
++    Q_INVOKABLE void setTabIcon(int index, const QIcon &icon);
+ 
+     /**
+      * @return the current icon for a given tab
+      *
+      * @arg index the index of the tab we want to know its icon
+      */
+-    QIcon tabIcon(int index) const;
++    Q_INVOKABLE QIcon tabIcon(int index) const;
+ 
+     /**
+      * shows or hides the tabbar, used if you just want to display the
+@@ -210,12 +226,15 @@ Q_SIGNALS:
+ protected:
+     void wheelEvent(QGraphicsSceneWheelEvent *event);
+     void resizeEvent(QGraphicsSceneResizeEvent * event);
+-
++    void changeEvent(QEvent *event);
+ private:
+     TabBarPrivate * const d;
++    
++    friend class TabBarPrivate;
+ 
+     Q_PRIVATE_SLOT(d, void slidingCompleted(QGraphicsItem *item))
+     Q_PRIVATE_SLOT(d, void shapeChanged(const QTabBar::Shape shape))
++    Q_PRIVATE_SLOT(d, void setPalette())
+ };
+ 
+ } // namespace Plasma

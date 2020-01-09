@@ -1,0 +1,109 @@
+--- a/kdeui/jobs/kdialogjobuidelegate.cpp	
++++ a/kdeui/jobs/kdialogjobuidelegate.cpp	
+@@ -89,15 +89,9 @@ void KDialogJobUiDelegate::slotWarning(KJob* /*job*/, const QString &plain, cons
+ {
+     if (isAutoWarningHandlingEnabled())
+     {
+-        static uint msgBoxDisplayed = 0;
+-        if ( msgBoxDisplayed == 0 ) // don't bomb the user with message boxes, only one at a time
+-        {
+-            msgBoxDisplayed++;
+-            KMessageBox::information( d->errorParentWidget, plain );
+-            msgBoxDisplayed--;
+-        }
+-        // otherwise just discard it.
++	KMessageBox::queuedMessageBox(d->errorParentWidget, KMessageBox::Information, plain);
+     }
+ }
+ 
++
+ #include "kdialogjobuidelegate.moc"
+--- a/kio/kio/copyjob.h	
++++ a/kio/kio/copyjob.h	
+@@ -259,6 +259,7 @@ namespace KIO {
+     private:
+         Q_PRIVATE_SLOT(d_func(), void slotStart())
+         Q_PRIVATE_SLOT(d_func(), void slotEntries( KIO::Job*, const KIO::UDSEntryList& list ))
++	Q_PRIVATE_SLOT(d_func(), void slotSubError( KIO::ListJob*, KIO::ListJob* ))
+         Q_PRIVATE_SLOT(d_func(), void slotProcessedSize( KJob*, qulonglong data_size ))
+         Q_PRIVATE_SLOT(d_func(), void slotTotalSize( KJob*, qulonglong size ))
+         Q_PRIVATE_SLOT(d_func(), void slotReport())
+--- a/kio/kio/copyjob.cpp	
++++ a/kio/kio/copyjob.cpp	
+@@ -221,6 +221,7 @@ public:
+ 
+     void slotStart();
+     void slotEntries( KIO::Job*, const KIO::UDSEntryList& list );
++    void slotSubError(KIO::ListJob* job, KIO::ListJob *subJob);
+     void addCopyInfoFromUDSEntry(const UDSEntry& entry, const KUrl& srcUrl, bool srcIsDir, const KUrl& currentDest);
+     /**
+      * Forward signal from subjob
+@@ -564,6 +565,18 @@ void CopyJobPrivate::slotEntries(KIO::Job* job, const UDSEntryList& list)
+     }
+ }
+ 
++void CopyJobPrivate::slotSubError(ListJob* job, ListJob* subJob)
++{
++	const KUrl url = subJob->url();
++	kWarning() << url << subJob->errorString();
++
++	Q_Q(CopyJob);
++
++	emit q->warning(job, subJob->errorString(), QString());
++	skip(url);
++}
++
++
+ void CopyJobPrivate::addCopyInfoFromUDSEntry(const UDSEntry& entry, const KUrl& srcUrl, bool srcIsDir, const KUrl& currentDest)
+ {
+     struct CopyInfo info;
+@@ -855,6 +868,8 @@ void CopyJobPrivate::startListing( const KUrl & src )
+     newjob->setUnrestricted(true);
+     q->connect(newjob, SIGNAL(entries(KIO::Job*,KIO::UDSEntryList)),
+                SLOT(slotEntries(KIO::Job*,KIO::UDSEntryList)));
++    q->connect(newjob, SIGNAL(subError(KIO::ListJob*,KIO::ListJob*)),
++	       SLOT(slotSubError(KIO::ListJob*,KIO::ListJob*)));
+     q->addSubjob( newjob );
+ }
+ 
+--- a/kio/kio/job.cpp	
++++ a/kio/kio/job.cpp	
+@@ -2613,10 +2613,15 @@ void ListJobPrivate::gotEntries(KIO::Job *, const KIO::UDSEntryList& list )
+ 
+ void ListJob::slotResult( KJob * job )
+ {
+-    // If we can't list a subdir, the result is still ok
+-    // This is why we override Job::slotResult() - to skip error checking
+-    removeSubjob( job );
+-    if ( !hasSubjobs() )
++    if (job->error()) {
++	// If we can't list a subdir, the result is still ok
++	// This is why we override KCompositeJob::slotResult - to not set
++	// an error on parent job.
++	// Let's emit a signal about this though
++	emit subError(this, static_cast<KIO::ListJob*>(job));
++    }
++    removeSubjob(job);
++    if (!hasSubjobs())
+         emitResult();
+ }
+ 
+--- a/kio/kio/jobclasses.h	
++++ a/kio/kio/jobclasses.h	
+@@ -963,6 +963,16 @@ namespace KIO {
+          */
+         void entries( KIO::Job *job, const KIO::UDSEntryList& list); // TODO KDE5: use KIO::ListJob* argument to avoid casting
+ 
++	/**
++	 * This signal is emitted when a sub-directory could not be listed.
++	 * The job keeps going, thus doesn't result in an overall error.
++	 * @param job the job that emitted the signal
++	 * @param subJob the job listing a sub-directory, which failed. Use
++	 *		 url(), error() and errorText() on that job to find
++	 *		 out more.
++	 */
++	void subError( KIO::ListJob *job, KIO::ListJob *subJob );
++
+         /**
+          * Signals a redirection.
+          * Use to update the URL shown to the user.

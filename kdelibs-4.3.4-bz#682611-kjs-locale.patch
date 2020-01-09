@@ -1,0 +1,13 @@
+diff -up kdelibs-4.3.4/kdeui/dialogs/kmessagebox.cpp.than kdelibs-4.3.4/kdeui/dialogs/kmessagebox.cpp
+diff -up kdelibs-4.3.4/khtml/ecma/kjs_navigator.cpp.than kdelibs-4.3.4/khtml/ecma/kjs_navigator.cpp
+--- kdelibs-4.3.4/khtml/ecma/kjs_navigator.cpp.than	2012-07-10 16:17:10.000000000 +0200
++++ kdelibs-4.3.4/khtml/ecma/kjs_navigator.cpp	2012-07-10 17:21:06.000000000 +0200
+@@ -257,7 +257,7 @@ JSValue *Navigator::getValueProperty(Exe
+   case BrowserLanguage:
+   case Language:
+   case UserLanguage:
+-    return jsString(KGlobal::locale()->language());
++    return jsString(KGlobal::locale()->language().replace('_', "-"));
+   case UserAgent:
+     return jsString(userAgent);
+   case Platform:

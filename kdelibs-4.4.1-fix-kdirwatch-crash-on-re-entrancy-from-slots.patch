@@ -1,0 +1,125 @@
+diff --git a/kio/kio/kdirwatch.cpp b/kio/kio/kdirwatch.cpp
+index 44cc6ce..825756a 100644
+--- a/kio/kio/kdirwatch.cpp
++++ b/kio/kio/kdirwatch.cpp
+@@ -483,6 +483,18 @@ QList<KDirWatchPrivate::Client *> KDirWatchPrivate::Entry::clientsForFileOrDir(c
+   return ret;
+ }
+ 
++QDebug operator<<(QDebug debug, const KDirWatchPrivate::Entry &entry)
++{
++  debug.space() << entry.path << (entry.isDir ? "dir" : "file");
++  if (entry.m_status == KDirWatchPrivate::NonExistent)
++    debug << "NonExistent";
++  debug << "mode:" << entry.m_mode
++        << entry.m_clients.count() << "clients";
++  if (!entry.m_entries.isEmpty())
++    debug << entry.m_entries.count() << "nonexistent entries";
++  return debug;
++}
++
+ KDirWatchPrivate::Entry* KDirWatchPrivate::entry(const QString& _path)
+ {
+ // we only support absolute paths
+@@ -561,6 +573,8 @@ bool KDirWatchPrivate::useFAM(Entry* e)
+         delete sn; sn = 0;
+ 	return false;
+       }
++      // We need to make sure the entry isn't listed in its parent's subentries... (#222974, testMoveTo)
++      removeEntry(0, QDir::cleanPath(e->path + "/.."), e);
+ 
+       kDebug(7001).nospace() << " Setup FAM (Req " << FAMREQUEST_GETREQNUM(&(e->fr))
+                    << ") for " << e->path;
+@@ -1211,19 +1225,22 @@ void KDirWatchPrivate::emitEvent(const Entry* e, int event, const QString &fileN
+     c->pending = NoChange;
+     if (event == NoChange) continue;
+ 
++    // Emit the signals delayed, to avoid unexpected re-entrancy from the slots (#220153)
++    
+     if (event & Deleted) {
+-      c->instance->setDeleted(path);
++      QMetaObject::invokeMethod(c->instance, "setDeleted", Qt::QueuedConnection, Q_ARG(QString, path));
+       // emit only Deleted event...
+       continue;
+     }
+ 
+     if (event & Created) {
+-      c->instance->setCreated(path);
++      QMetaObject::invokeMethod(c->instance, "setCreated", Qt::QueuedConnection, Q_ARG(QString, path));
+       // possible emit Change event after creation
+     }
+ 
+-    if (event & Changed)
+-      c->instance->setDirty(path);
++    if (event & Changed) {
++      QMetaObject::invokeMethod(c->instance, "setDirty", Qt::QueuedConnection, Q_ARG(QString, path));
++    }
+   }
+ }
+ 
+diff --git a/kio/kio/kdirwatch.h b/kio/kio/kdirwatch.h
+index 9ccae1d..394c326 100644
+--- a/kio/kio/kdirwatch.h
++++ b/kio/kio/kdirwatch.h
+@@ -216,22 +216,6 @@ class KIO_EXPORT KDirWatch : public QObject
+     */
+    static void statistics();
+ 
+-   /**
+-    * Emits created().
+-    * @param path the path of the file or directory
+-    */
+-   void setCreated( const QString &path );
+-   /**
+-    * Emits dirty().
+-    * @param path the path of the file or directory
+-    */
+-   void setDirty( const QString &path );
+-   /**
+-    * Emits deleted().
+-    * @param path the path of the file or directory
+-    */
+-   void setDeleted( const QString &path );
+-
+    enum Method { FAM, INotify, DNotify, Stat };
+    /**
+     * Returns the preferred internal method to
+@@ -259,6 +243,26 @@ class KIO_EXPORT KDirWatch : public QObject
+     */
+    static bool exists();
+ 
++public Q_SLOTS: 
++
++   /**
++    * Emits created().
++    * @param path the path of the file or directory
++    */
++   void setCreated( const QString &path );
++    
++   /**
++    * Emits dirty().
++    * @param path the path of the file or directory
++    */
++   void setDirty( const QString &path );
++
++   /**
++    * Emits deleted().
++    * @param path the path of the file or directory
++    */
++   void setDeleted( const QString &path );
++
+  Q_SIGNALS:
+ 
+    /**
+diff --git a/kio/kio/kdirwatch_p.h b/kio/kio/kdirwatch_p.h
+index 61463a2..7173415 100644
+--- a/kio/kio/kdirwatch_p.h
++++ b/kio/kio/kdirwatch_p.h
+@@ -258,5 +258,7 @@ public:
+   bool _isStopped;
+ };
+ 
++QDebug operator<<(QDebug debug, const KDirWatchPrivate::Entry &entry);
++
+ #endif // KDIRWATCH_P_H
+ 

@@ -1,0 +1,26 @@
+diff -up kdelibs-4.3.4/plasma/popupapplet.cpp.734734 kdelibs-4.3.4/plasma/popupapplet.cpp
+--- kdelibs-4.3.4/plasma/popupapplet.cpp.734734	2009-10-02 10:18:10.000000000 +0200
++++ kdelibs-4.3.4/plasma/popupapplet.cpp	2011-08-31 14:57:53.000000000 +0200
+@@ -302,7 +302,10 @@ void PopupAppletPrivate::popupConstraint
+                 //emulate the same kind of behavior as Qt::Popup (close when you click somewhere
+                 //else.
+ 
+-                q->setMinimumSize(QSize(0, 0));
++                if (icon) {
++                    q->setMinimumSize(QSize(0, 0));
++                }
++
+                 if (gWidget) {
+                     Corona *corona = qobject_cast<Corona *>(gWidget->scene());
+ 
+@@ -336,7 +339,9 @@ void PopupAppletPrivate::popupConstraint
+                 lay->addItem(icon);
+             }
+ 
+-            q->setMinimumSize(0,0);
++            if (icon) {
++                q->setMinimumSize(0,0);
++            }
+         }
+     }
+     emit q->sizeHintChanged(Qt::PreferredSize);

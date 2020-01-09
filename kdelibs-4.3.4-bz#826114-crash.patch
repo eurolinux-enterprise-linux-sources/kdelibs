@@ -1,0 +1,128 @@
+diff -up kdelibs-4.3.4/kdeui/widgets/kmenu.cpp.me kdelibs-4.3.4/kdeui/widgets/kmenu.cpp
+--- kdelibs-4.3.4/kdeui/widgets/kmenu.cpp.me	2012-07-02 18:32:00.171782709 +0200
++++ kdelibs-4.3.4/kdeui/widgets/kmenu.cpp	2012-07-02 18:52:02.099788322 +0200
+@@ -64,6 +64,7 @@ public:
+     QString originalText;
+ 
+     QAction* lastHitAction;
++    QAction* lastHoveredAction;
+     Qt::MouseButtons mouseButtons;
+     Qt::KeyboardModifiers keyboardModifiers;
+ 
+@@ -115,6 +116,7 @@ KMenu::KMenuPrivate::KMenuPrivate (KMenu
+     , shortcuts(false)
+     , autoExec(false)
+     , lastHitAction(0L)
++    , lastHoveredAction(0L)
+     , mouseButtons(Qt::NoButton)
+     , keyboardModifiers(Qt::NoModifier)
+     , ctxMenu(0)
+@@ -482,8 +484,9 @@ void KMenu::hideContextMenu()
+     d->ctxMenu->hide();
+ }
+ 
+-void KMenu::KMenuPrivate::actionHovered(QAction* /*action*/)
++void KMenu::KMenuPrivate::actionHovered(QAction* action)
+ {
++    lastHoveredAction = action;
+     parent->hideContextMenu();
+ }
+ 
+@@ -527,8 +530,10 @@ KMenu * KMenu::contextMenuFocus( )
+ QAction * KMenu::contextMenuFocusAction( )
+ {
+   if (KMenu* menu = qobject_cast<KMenu*>(QApplication::activePopupWidget())) {
+-    //QVariant var = menu->menuAction()->data();  //it seems that this action is not the good one, at least once the action has been clicked
+-    QVariant var = menu->activeAction()->data();
++    if (!menu->d->lastHoveredAction) {
++      return 0;
++    }
++    QVariant var = menu->d->lastHoveredAction->data();
+     KMenuContext ctx = var.value<KMenuContext>();
+     Q_ASSERT(ctx.menu() == menu);
+     return ctx.action();
+diff -up kdelibs-4.3.4/kdeui/xmlgui/kxmlguiclient.cpp.me kdelibs-4.3.4/kdeui/xmlgui/kxmlguiclient.cpp
+--- kdelibs-4.3.4/kdeui/xmlgui/kxmlguiclient.cpp.me	2012-07-02 17:31:11.869787190 +0200
++++ kdelibs-4.3.4/kdeui/xmlgui/kxmlguiclient.cpp	2012-07-02 17:36:36.961790717 +0200
+@@ -90,11 +90,18 @@ KXMLGUIClient::KXMLGUIClient( KXMLGUICli
+ 
+ KXMLGUIClient::~KXMLGUIClient()
+ {
+-  if ( d->m_parent )
++  if ( d->m_parent ) {
+     d->m_parent->removeChildClient( this );
++  }
++
++  if ( d->m_factory ) {
++    d->m_factory->forgetClient(this);
++  }
+ 
+   foreach (KXMLGUIClient* client, d->m_children) {
+       assert( client->d->m_parent == this );
++      if (d->m_factory)
++        d->m_factory->forgetClient(client);
+       client->d->m_parent = 0;
+   }
+ 
+diff -up kdelibs-4.3.4/kdeui/xmlgui/kxmlguifactory.cpp.me kdelibs-4.3.4/kdeui/xmlgui/kxmlguifactory.cpp
+--- kdelibs-4.3.4/kdeui/xmlgui/kxmlguifactory.cpp.me	2012-07-02 17:00:50.712766612 +0200
++++ kdelibs-4.3.4/kdeui/xmlgui/kxmlguifactory.cpp	2012-07-02 17:37:50.273796108 +0200
+@@ -201,6 +201,9 @@ KXMLGUIFactory::KXMLGUIFactory( KXMLGUIB
+ 
+ KXMLGUIFactory::~KXMLGUIFactory()
+ {
++    foreach (KXMLGUIClient *client, d->m_clients) {
++        client->setFactory ( 0L );
++    }
+     delete d;
+ }
+ 
+@@ -342,8 +345,8 @@ void KXMLGUIFactoryPrivate::saveDefaultA
+     // the lifetime of an action.
+     foreach (QAction *action, client->actionCollection()->actions())
+     {
+-        // Skip actions we have seen already.
+-        if (action->property("_k_DefaultShortcut").isValid()) continue;
++        // Skip NULL actions or those we have seen already.
++        if (!action || action->property("_k_DefaultShortcut").isValid()) continue;
+ 
+         if (KAction* kaction = qobject_cast<KAction*>(action))
+         {
+@@ -384,6 +387,11 @@ void KXMLGUIFactory::changeShortcutSchem
+     refreshActionProperties();
+ }
+ 
++void KXMLGUIFactory::forgetClient( KXMLGUIClient *client )
++{
++    d->m_clients.removeAll( client );
++}
++
+ void KXMLGUIFactory::removeClient( KXMLGUIClient *client )
+ {
+     //kDebug(260) << client;
+diff -up kdelibs-4.3.4/kdeui/xmlgui/kxmlguifactory.h.me kdelibs-4.3.4/kdeui/xmlgui/kxmlguifactory.h
+--- kdelibs-4.3.4/kdeui/xmlgui/kxmlguifactory.h.me	2012-07-02 17:38:13.155786850 +0200
++++ kdelibs-4.3.4/kdeui/xmlgui/kxmlguifactory.h	2012-07-02 17:38:57.800823277 +0200
+@@ -216,6 +216,10 @@ Q_SIGNALS:
+     void makingChanges(bool);
+ 
+ private:
++  friend class KXMLGUIClient;
++  /// Internal, called by KXMLGUIClient destructor
++  void forgetClient(KXMLGUIClient *client);
++
+   KXMLGUIFactoryPrivate *const d;
+ };
+ 
+diff -up kdelibs-4.3.4/kdeui/xmlgui/kxmlguiwindow.cpp.me kdelibs-4.3.4/kdeui/xmlgui/kxmlguiwindow.cpp
+--- kdelibs-4.3.4/kdeui/xmlgui/kxmlguiwindow.cpp.me	2012-07-02 17:34:05.971765095 +0200
++++ kdelibs-4.3.4/kdeui/xmlgui/kxmlguiwindow.cpp	2012-07-02 17:34:39.175776149 +0200
+@@ -124,6 +124,8 @@ void KXmlGuiWindow::setupToolbarMenuActi
+ 
+ KXmlGuiWindow::~KXmlGuiWindow()
+ {
++    K_D(KXmlGuiWindow);
++    delete d->factory;
+ }
+ 
+ bool KXmlGuiWindow::event( QEvent* ev )

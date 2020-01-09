@@ -1,0 +1,117 @@
+diff --git a/kate/view/kateviewinternal.cpp b/kate/view/kateviewinternal.cpp
+index e2c1b6b..2c39c66 100644
+--- a/kate/view/kateviewinternal.cpp
++++ b/kate/view/kateviewinternal.cpp
+@@ -1849,6 +1849,22 @@ void KateViewInternal::updateSelection( const KTextEditor::Cursor& _newCursor, b
+   }
+ }
+ 
++void KateViewInternal::moveCursorToSelectionEdge()
++{
++    if (!m_view->selection())
++      return;
++    
++    int tmp = m_minLinesVisible;
++    m_minLinesVisible = 0;
++    
++    if ( m_view->selectionRange().start() < m_selectAnchor )
++      updateCursor( m_view->selectionRange().start() );
++    else
++      updateCursor( m_view->selectionRange().end() );
++    
++    m_minLinesVisible = tmp;
++}
++
+ void KateViewInternal::updateCursor( const KTextEditor::Cursor& newCursor, bool force, bool center, bool calledExternally )
+ {
+   if ( !force && (m_cursor == newCursor) )
+@@ -2128,7 +2144,13 @@ void KateViewInternal::placeCursor( const QPoint& p, bool keepSelection, bool up
+   if (updateSelection)
+     KateViewInternal::updateSelection( c, keepSelection );
+ 
++  int tmp = m_minLinesVisible;
++  m_minLinesVisible = 0;
+   updateCursor( c );
++  m_minLinesVisible = tmp;
++  
++  if (updateSelection)
++    moveCursorToSelectionEdge();
+ }
+ 
+ // Point in content coordinates
+@@ -2506,6 +2528,8 @@ void KateViewInternal::mousePressEvent( QMouseEvent* e )
+           else
+           {
+             m_view->selectLine( m_cursor );
++            if (m_view->selection())
++              m_selectAnchor = m_view->selectionRange().start();
+           }
+ 
+           if (m_view->selection())
+@@ -2532,14 +2556,7 @@ void KateViewInternal::mousePressEvent( QMouseEvent* e )
+               m_selectionCached.end() = m_view->selectionRange().end();
+           }
+ 
+-          // Set cursor to edge of selection... which edge depends on what
+-          // "direction" the selection was made in
+-          if ( m_view->selectionRange().start() < m_selectAnchor
+-               && m_selectAnchor.line() != m_view->selectionRange().start().line() )
+-            updateCursor( m_view->selectionRange().start() );
+-          else
+-            updateCursor( m_view->selectionRange().end() );
+-
++          moveCursorToSelectionEdge();
+           e->accept();
+           return;
+         }
+@@ -2669,17 +2686,9 @@ void KateViewInternal::mouseDoubleClickEvent(QMouseEvent *e)
+ 
+       // Move cursor to end (or beginning) of selected word
+       if (m_view->selection())
+-      {
+         QApplication::clipboard()->setText( m_view->selectionText(), QClipboard::Selection );
+ 
+-        // Shift+DC before the "cached" word should move the cursor to the
+-        // beginning of the selection, not the end
+-        if (m_view->selectionRange().start() < m_selectionCached.start())
+-          updateCursor( m_view->selectionRange().start() );
+-        else
+-          updateCursor( m_view->selectionRange().end() );
+-      }
+-
++      moveCursorToSelectionEdge();
+       m_possibleTripleClick = true;
+       QTimer::singleShot ( QApplication::doubleClickInterval(), this, SLOT(tripleClickTimeout()) );
+ 
+@@ -2714,18 +2723,11 @@ void KateViewInternal::mouseReleaseEvent( QMouseEvent* e )
+       {
+         if (m_view->selection()) {
+           QApplication::clipboard()->setText(m_view->selectionText (), QClipboard::Selection);
+-
+-          // Set cursor to edge of selection... which edge depends on what
+-          // "direction" the selection was made in
+-          if ( m_view->selectionRange().start() < m_selectAnchor )
+-            updateCursor( m_view->selectionRange().start() );
+-          else
+-            updateCursor( m_view->selectionRange().end() );
+         }
+ 
+         m_selChangedByUser = false;
+       }
+-
++      moveCursorToSelectionEdge();
+       if (m_dragInfo.state == diPending)
+         placeCursor( e->pos(), e->modifiers() & Qt::ShiftModifier );
+       else if (m_dragInfo.state == diNone)
+diff --git a/kate/view/kateviewinternal.h b/kate/view/kateviewinternal.h
+index 5adaf2b..0091ac6 100644
+--- a/kate/view/kateviewinternal.h
++++ b/kate/view/kateviewinternal.h
+@@ -240,6 +240,7 @@ class KateViewInternal : public QWidget, private KTextEditor::SmartRangeWatcher
+     int lineToY(int viewLine) const;
+ 
+     void updateSelection( const KTextEditor::Cursor&, bool keepSel );
++    void moveCursorToSelectionEdge();
+     //The smart-lock should not be locked when this is called
+     void updateCursor( const KTextEditor::Cursor& newCursor, bool force = false, bool center = false, bool calledExternally = false );
+     void updateBracketMarks();
