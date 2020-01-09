@@ -4,7 +4,7 @@
 
 Summary: K Desktop Environment 4 - Libraries
 Version: 4.3.4
-Release: 21%{?dist}
+Release: 23%{?dist}
 
 Name: kdelibs
 Epoch: 6
@@ -121,6 +121,14 @@ Patch203: kdelibs-4.3.4-performance-khtmlview.patch
 # Wallpaper does not apply on both screens when on dual head
 Patch204: kdelibs-4.4-bz#1025417.patch
 
+# https://bugzilla.redhat.com/show_bug.cgi?id=1088925
+# 1088925 - Opening a terminal in Konqueror / Dolphin does not inherit environment variables
+Patch205: kdelibs-4.3.4-preserve-env-vars.patch
+
+# https://bugzilla.redhat.com/show_bug.cgi?id=1105542
+# 1105542 - The kate editor does not retain printing preferences
+Patch206: kdelibs-4.3.4-kate-print-options.patch
+
 # security fix
 Patch300: kdelibs-4.3.1-CVE-2009-2702.patch
 Patch301: kdelibs-4.3.4-CVE-2011-1094.patch
@@ -131,7 +139,7 @@ Patch305: kdelibs-4.3.4-CVE-2012-4512.patch
 Patch306: kdelibs-4.3.4-CVE-2012-4513.patch
 
 # backport patches 
-patch400: kdelibs-4.3.4-bz#587016.patch
+Patch400: kdelibs-4.3.4-bz#587016.patch
 Patch401: kdelibs-4.3.4-bz#682611-kjs-locale.patch
 Patch402: kdelibs-4.3.5-bz#734734.patch
 Patch404: kdelibs-4.3.4-bz#826114-crash.patch 
@@ -260,6 +268,8 @@ format for easy browsing.
 %patch202 -p1 -b .printing
 %patch203 -p1 -b .performance
 %patch204 -p1 -b .dualheadWallpaper
+%patch205 -p1 -b .preserveenvvars
+%patch206 -p1 -b .kateprintoptions
 
 # security fixes
 %patch300 -p1 -b .CVE-2009-2702
@@ -457,6 +467,14 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Wed Mar 25 2015 Lukáš Tinkl <ltinkl@redhat.com> - 6:4.3.4-23
+- Resolves: rhbz#1206181 - The kate editor does not retain 
+  printing preferences
+
+* Wed Mar 25 2015 Lukáš Tinkl <ltinkl@redhat.com> - 6:4.3.4-22
+- Resolves rhbz#1206180 - Opening a terminal in Konqueror / Dolphin does not 
+  inherit environment variables
+
 * Mon Jul 02 2014 Daniel Vrátil <dvratil@redhat.com> - 6:4.3.4-21
 - Resolves bz#1025417, wallpaper not applied on second screen when on dualhead
 
