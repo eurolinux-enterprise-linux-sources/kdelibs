@@ -4,7 +4,7 @@
 
 Summary: K Desktop Environment 4 - Libraries
 Version: 4.3.4
-Release: 28%{?dist}
+Release: 20%{?dist}.1
 
 Name: kdelibs
 Epoch: 6
@@ -30,9 +30,9 @@ Requires: kde-settings
 Requires: shared-mime-info
 Requires: kdelibs-common
 Requires: hunspell
-Requires: phonon%{?_isa} >= %{phonon_ver}
-Requires: soprano%{?_isa} >= %{soprano_ver}
-Requires: strigi-libs%{?_isa} >= %{strigi_ver}
+Requires: phonon%{?_isa} >= %{phonon_ver} 
+Requires: soprano%{?_isa} >= %{soprano_ver} 
+Requires: strigi-libs%{?_isa} >= %{strigi_ver} 
 Requires: ca-certificates
 
 Source1: kde4.sh
@@ -67,7 +67,7 @@ Patch10: kdelibs-4.1.72-no-cache-kdeglobals-paths.patch
 Patch11: kdelibs-4.1.72-policykit-workaround.patch
 Patch12: kdelibs-4.1.0-xdg-menu.patch
 
-# patch KStandardDirs to use {_libexecdir}/kde4 instead of {_libdir}/kde4/libexec
+# patch KStandardDirs to use %{_libexecdir}/kde4 instead of %{_libdir}/kde4/libexec
 Patch14: kdelibs-4.2.85-libexecdir.patch
 
 # kstandarddirs changes: search /etc/kde, find /usr/libexec/kde4
@@ -117,38 +117,6 @@ Patch202: kdelibs-4.3.4-printing.patch
 # critical performance fix
 Patch203: kdelibs-4.3.4-performance-khtmlview.patch
 
-# https://bugzilla.redhat.com/show_bug.cgi?id=1025417
-# Wallpaper does not apply on both screens when on dual head
-Patch204: kdelibs-4.4-bz#1025417.patch
-
-# https://bugzilla.redhat.com/show_bug.cgi?id=1088925
-# 1088925 - Opening a terminal in Konqueror / Dolphin does not inherit environment variables
-Patch205: kdelibs-4.3.4-preserve-env-vars.patch
-
-# https://bugzilla.redhat.com/show_bug.cgi?id=1105542
-# 1105542 - The kate editor does not retain printing preferences
-Patch206: kdelibs-4.3.4-kate-print-options.patch
-
-# https://bugzilla.redhat.com/show_bug.cgi?id=1123512
-# 1123512 - clicking 3x in empty kwrite window causes segfault
-Patch207: kdelibs-4.4.x-fix-crash-on-mouse-double-click.patch
-
-# https://bugzilla.redhat.com/show_bug.cgi?id=1105072
-# 1105072 - kbuildsycoca4 goes into infinite recursion while scanning for .desktop file
-Patch208: kdelibs-4.4.x-infinite-recursion-while-scanning-for-desktop-files.patch
-
-# https://bugzilla.redhat.com/show_bug.cgi?id=1104205
-# meinproc4 does not replace entities after libxml2 fixes for CVE-2014-0191 
-Patch209: kdelibs-4.3.4-explicitly-load-external-entities-after-CVE-2014-019.patch
-
-# https://bugzilla.redhat.com/show_bug.cgi?id=1279627
-# Dolphin crashes randomly with signal 11
-Patch210: kdelibs-4.4.1-fix-kdirwatch-crash-on-re-entrancy-from-slots.patch
-
-# https://bugzilla.redhat.com/show_bug.cgi?id=1281742
-# plasma-desktop sometimes crashes while hovering over application icon in taskbar
-Patch211: kdelibs-do-not-crash-plasma-desktop-while-hovering-over-application-in-taskbar.patch
-
 # security fix
 Patch300: kdelibs-4.3.1-CVE-2009-2702.patch
 Patch301: kdelibs-4.3.4-CVE-2011-1094.patch
@@ -157,13 +125,12 @@ Patch303: kdelibs-4.3.4-CVE-2011-3365-kssl.patch
 Patch304: kdelibs-4.3.4-CVE-2011-3365-kioslave-http.patch
 Patch305: kdelibs-4.3.4-CVE-2012-4512.patch
 Patch306: kdelibs-4.3.4-CVE-2012-4513.patch
-Patch307: kdelibs-4.3.4-CVE-2010-0046.patch
 
-# backport patches
-Patch400: kdelibs-4.3.4-bz#587016.patch
+# backport patches 
+patch400: kdelibs-4.3.4-bz#587016.patch
 Patch401: kdelibs-4.3.4-bz#682611-kjs-locale.patch
 Patch402: kdelibs-4.3.5-bz#734734.patch
-Patch404: kdelibs-4.3.4-bz#826114-crash.patch
+Patch404: kdelibs-4.3.4-bz#826114-crash.patch 
 Patch405: kdelibs-4.3.x-bz#754161.patch
 Patch406: kdelibs-4.3.4-bz#882895.patch
 
@@ -195,10 +162,10 @@ BuildRequires: libutempter-devel
 BuildRequires: OpenEXR-devel
 BuildRequires: openssl-devel
 BuildRequires: pcre-devel
-BuildRequires: phonon-devel >= %{phonon_ver}
+BuildRequires: phonon-devel >= %{phonon_ver} 
 BuildRequires: shared-mime-info
-BuildRequires: soprano-devel >= %{soprano_ver}
-BuildRequires: strigi-devel >= %{strigi_ver}
+BuildRequires: soprano-devel >= %{soprano_ver} 
+BuildRequires: strigi-devel >= %{strigi_ver} 
 BuildRequires: xz-devel
 BuildRequires: zlib-devel
 # extra X deps (seemingly needed and/or checked-for by most kde4 buildscripts)
@@ -207,7 +174,7 @@ BuildRequires: zlib-devel
 BuildRequires: openssh-clients
 BuildRequires: subversion
 BuildRequires: doxygen
-# BuildRequires: qt4-doc
+BuildRequires: qt4-doc
 
 Provides: kross(javascript) = %{version}-%{release}
 Provides: kross(qtscript) = %{version}-%{release}
@@ -288,14 +255,6 @@ format for easy browsing.
 %patch201 -p1 -b .sonnet
 %patch202 -p1 -b .printing
 %patch203 -p1 -b .performance
-%patch204 -p1 -b .dualheadWallpaper
-%patch205 -p1 -b .preserveenvvars
-%patch206 -p1 -b .kateprintoptions
-%patch207 -p1 -b .fix-crash-on-mouse-double-click
-%patch208 -p1 -b .infinite-recursion-while-scanning-for-desktop-files
-%patch209 -p1 -b .explicitly-load-external-entities-after-CVE-2014-019
-%patch210 -p1 -b .fix-kdirwatch-crash-on-re-entrancy-from-slots
-%patch211 -p1 -b .do-not-crash-plasma-desktop-while-hovering-over-application-in-taskbar
 
 # security fixes
 %patch300 -p1 -b .CVE-2009-2702
@@ -305,7 +264,6 @@ format for easy browsing.
 %patch304 -p1 -b .CVE-2011-3365-kioslave-http
 %patch305 -p1 -b .CVE_2012-4512
 %patch306 -p1 -b .CVE_2012-4513
-%patch307 -p1 -b .CVE-2010-0046
 
 # backport fixes
 %patch400 -p1 -b .bz#587016
@@ -349,7 +307,7 @@ mkdir -p %{buildroot}%{_kde4_libdir}/kconf_update_bin
 if [  -f %{buildroot}%{_kde4_appsdir}/kssl/ca-bundle.crt -a \
       -f /etc/pki/tls/certs/ca-bundle.crt ]; then
   ln -sf /etc/pki/tls/certs/ca-bundle.crt \
-         %{buildroot}%{_kde4_appsdir}/kssl/ca-bundle.crt
+         %{buildroot}%{_kde4_appsdir}/kssl/ca-bundle.crt 
 fi
 
 # move devel symlinks
@@ -494,31 +452,8 @@ rm -rf %{buildroot}
 
 
 %changelog
-* Fri Nov 27 2015 Jan Grulich <jgrulich@redhat.com> - 6:4.3.4-28
-- Resolves: rhbz:1281742 - do not crash plasma-desktop while hovering over application in taskbar
-
-* Fri Nov 27 2015 Jan Grulich <jgrulich@redhat.com> - 6:4.3.4-26
-- Resolves: rhbz:623642 - do not crash konqueror on specific HTML content
-- Resolves: rhbz:1104205 - meinproc4 does not replace entities after libxml2 fixes
-- Resolves: rhbz:1279627 - do not crash kdirwatch on re-entrancy from slots
-
-* Wed Nov 04 2015 Jan Grulich <jgrulich@redhat.com> - 6:4.3.4-25
-- Resolves: rhbz#1105072 - kbuildsycoca4 goes into infinite recursion while scanning for .desktop file
-
-* Wed Nov 04 2015 Jan Grulich <jgrulich@redhat.com> - 6:4.3.4-24
-- Resolves: rhbz#1241170 - KDE wallpaper change requiring reboot to take affect
-- Resolves: rhbz#1123512 - Clicking 3x in empty kwrite window causes segfault
-
-* Wed Mar 25 2015 Lukáš Tinkl <ltinkl@redhat.com> - 6:4.3.4-23
-- Resolves: rhbz#1105542 - The kate editor does not retain
-  printing preferences
-
-* Wed Mar 25 2015 Lukáš Tinkl <ltinkl@redhat.com> - 6:4.3.4-22
-- Resolves rhbz#1088925 - Opening a terminal in Konqueror / Dolphin does not
-  inherit environment variables
-
-* Mon Jul 02 2014 Daniel Vrátil <dvratil@redhat.com> - 6:4.3.4-21
-- Resolves bz#1025417, wallpaper not applied on second screen when on dualhead
+* Tue Jun 11 2013 Than Ngo <than@redhat.com> - 6:4.3.4-20.1
+- add missing Buildrequires on libXdmcp
 
 * Mon Jun 10 2013 Than Ngo <than@redhat.com> - 6:4.3.4-20
 - Resolves: bz#882895, crash when switching activity of 2 desktops from activity applet
@@ -566,7 +501,7 @@ rm -rf %{buildroot}
 - Resolves: bz#590651, disable dot to reduce the apidoc size
 
 * Sat May 01 2010 Than Ngo <than@redhat.com> - 6:4.3.4-6
-- Redhat branding
+- Redhat branding 
 - make kdeinit4 quiet
 - backport to fix critical performance
 - backport to fix issue in printing on pages with form widgets
@@ -578,7 +513,7 @@ rm -rf %{buildroot}
 - backport 4.3.5 fixes
 
 * Fri Dec 18 2009 Than Ngo <than@redhat.com> - 4.3.4-3
-- fix bz#531211, backport sonnet patch, fix rendering issue in indic, asian, arabic
+- fix bz#531211, backport sonnet patch, fix rendering issue in indic, asian, arabic 
   languages
 - drop noarch hack
 
@@ -763,12 +698,12 @@ rm -rf %{buildroot}
 - Provides: kross(javascript) kross(qtscript)  (#490586)
 
 * Thu Mar 12 2009 Than Ngo <than@redhat.com> - 4.2.1-6
-- apply patch to fix encoding for Qt-4.5.0
+- apply patch to fix encoding for Qt-4.5.0 
 
 * Mon Mar 09 2009 Than Ngo <than@redhat.com> - 4.2.1-5
 - apply patch to fix issue in CSS style that causes konqueror shows a blank page
 
-* Wed Mar 05 2009 Rex Dieter <rdieter@fedorproject.org> - 4.2.1-4
+* Wed Mar 05 2009 Rex Dieter <rdieter@fedorproject.org> - 4.2.1-4 
 - move designer plugins to main/runtime (#487622)
 
 * Sun Mar 01 2009 Than Ngo <than@redhat.com> - 4.2.1-2
@@ -810,7 +745,7 @@ rm -rf %{buildroot}
 - kded/kdirwatch patch (kde#182472)
 
 * Fri Jan 30 2009 Lukáš Tinkl <ltinkl@redhat.com> 4.2.0-6
-- Emit the correct FilesRemoved signal if the job was aborted in the middle of its operation,
+- Emit the correct FilesRemoved signal if the job was aborted in the middle of its operation, 
   otherwise it can result in confusion and data loss (overwriting files with files
   that don't exist). kdebug:118593
 - Fix "klauncher hangs when kdeinit4 dies" -- this happened because
