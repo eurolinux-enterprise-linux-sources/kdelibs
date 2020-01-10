@@ -42,7 +42,7 @@ Summary: KDE Libraries
 # shipped with kde applications, version...
 %global apps_version 15.04.1
 Version: 4.14.8
-Release: 10%{?dist}
+Release: 11%{?dist}
 
 Name: kdelibs
 Epoch: 6
@@ -204,6 +204,7 @@ Patch093: turn-the-packagekit-support-feature-off-by-default.patch
 ## security fix
 # Bug 1452068 - CVE-2017-8422 kdelibs: kauth: service invoking dbus is not properly checked and allows local privilege escalation
 Patch80: kdelibs-kauth-CVE-2017-8422.patch
+Patch81: kdelibs-CVE-2019-14744-kconfig-malicious-desktop-files.patch
 
 # rhel patches
 Patch100: solid-upower-0.99.patch
@@ -447,6 +448,7 @@ sed -i -e "s|@@VERSION_RELEASE@@|%{version}-%{release}|" kio/kio/kprotocolmanage
 
 # security fixes
 %patch80 -p1 -b .kdelibs-kauth-CVE-2017-8422
+%patch81 -p1 -b .CVE-2019-14744-kconfig-malicious-desktop-files
 
 # rhel patches
 %patch100 -p1 -b .solid-upower099
@@ -802,6 +804,10 @@ update-mime-database %{_datadir}/mime &> /dev/null || :
 
 
 %changelog
+* Thu Aug 08 2019 Jan Grulich <jgrulich@redhat.com> - 6:4.14.8-11
+- KConfig: malicious .desktop files would execute code
+  Resolves: bz#1740736
+
 * Thu Jun 06 2019 Jan Grulich <jgrulich@redhat.com> - 6:4.14.8-10
 - Do not fork konsole process when opening terminal from apps using dolphin-part
   Resolves: bz#1710362
