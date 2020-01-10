@@ -1,25 +1,8 @@
-diff --git a/kdecore/kernel/ktoolinvocation_x11.cpp b/kdecore/kernel/ktoolinvocation_x11.cpp
-index 5168f2f..ed2a9ab 100644
---- a/kdecore/kernel/ktoolinvocation_x11.cpp
-+++ b/kdecore/kernel/ktoolinvocation_x11.cpp
-@@ -405,18 +405,20 @@ void KToolInvocation::invokeTerminal(const QString &command,
-     QStringList cmdTokens = KShell::splitArgs(exec);
-     QString cmd = cmdTokens.takeFirst();
- 
--    if (exec == QLatin1String("konsole") && !workdir.isEmpty()) {
--        cmdTokens << QString::fromLatin1("--workdir");
--        cmdTokens << workdir;
--        // For other terminals like xterm, we'll simply change the working
--        // directory before launching them, see below.
-+    if (exec == QLatin1String("konsole")) {
-+        cmdTokens += QString::fromLatin1("--nofork");
-+
-+        if (!workdir.isEmpty()) {
-+            cmdTokens << QString::fromLatin1("--workdir");
-+            cmdTokens << workdir;
-+            // For other terminals like xterm, we'll simply change the working
-+            // directory before launching them, see below.
-+        }
+diff -up kdelibs-4.13.2/kdecore/kernel/ktoolinvocation_x11.cpp.orig kdelibs-4.13.2/kdecore/kernel/ktoolinvocation_x11.cpp
+--- kdelibs-4.13.2/kdecore/kernel/ktoolinvocation_x11.cpp.orig	2014-07-11 16:54:51.000000000 +0200
++++ kdelibs-4.13.2/kdecore/kernel/ktoolinvocation_x11.cpp	2014-07-11 16:57:31.000000000 +0200
+@@ -412,11 +412,9 @@ void KToolInvocation::invokeTerminal(con
+         // directory before launching them, see below.
      }
  
 -    QString error;

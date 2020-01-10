@@ -36,13 +36,11 @@
 # trim changelog included in binary rpms
 %global _changelog_trimtime %(date +%s -d "1 year ago")
 
-%define __jar_repack %{nil}
-
 Summary: KDE Libraries
 # shipped with kde applications, version...
 %global apps_version 15.04.1
 Version: 4.14.8
-Release: 11%{?dist}
+Release: 4%{?dist}
 
 Name: kdelibs
 Epoch: 6
@@ -184,9 +182,6 @@ Patch66: kdelibs-4.11.3-klauncher-no-glib.patch
 # opening a terminal in Konqueror / Dolphin does not inherit environment variables
 Patch67: kdelibs-4.13.2-invokeTerminal.patch
 
-# *.macroEnabled mime types wrongly case-sensitively mismatched against /usr/share/mime/application/*.macroenabled.*.xml
-Patch68: kdelibs-handle-case-sensitive-mime-types.patch
-
 ## upstream
 # 4.14 branch
 
@@ -202,9 +197,6 @@ Patch092: return-application-icons-properly.patch
 Patch093: turn-the-packagekit-support-feature-off-by-default.patch
 
 ## security fix
-# Bug 1452068 - CVE-2017-8422 kdelibs: kauth: service invoking dbus is not properly checked and allows local privilege escalation
-Patch80: kdelibs-kauth-CVE-2017-8422.patch
-Patch81: kdelibs-CVE-2019-14744-kconfig-malicious-desktop-files.patch
 
 # rhel patches
 Patch100: solid-upower-0.99.patch
@@ -438,7 +430,6 @@ sed -i -e "s|@@VERSION_RELEASE@@|%{version}-%{release}|" kio/kio/kprotocolmanage
 %patch65 -p1 -b .arm-plasma
 %patch66 -p1 -b .klauncher-no-glib
 %patch67 -p1 -b .invokeTerminal
-%patch68 -p1 -b .handle-case-sensitive-mime-types
 
 # upstream patches
 %patch090 -p1 -R -b .return-not-break.-copy-paste-error
@@ -447,8 +438,6 @@ sed -i -e "s|@@VERSION_RELEASE@@|%{version}-%{release}|" kio/kio/kprotocolmanage
 %patch093 -p1 -R -b .turn-the-packagekit-support-feature-off-by-default
 
 # security fixes
-%patch80 -p1 -b .kdelibs-kauth-CVE-2017-8422
-%patch81 -p1 -b .CVE-2019-14744-kconfig-malicious-desktop-files
 
 # rhel patches
 %patch100 -p1 -b .solid-upower099
@@ -462,7 +451,7 @@ sed -i -e "s|@@VERSION_RELEASE@@|%{version}-%{release}|" kio/kio/kprotocolmanage
 
 
 %build
-export CXXFLAGS="$CXXFLAGS -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS"
+
 mkdir -p %{_target_platform}
 pushd %{_target_platform}
 %{cmake_kde4} \
@@ -804,39 +793,11 @@ update-mime-database %{_datadir}/mime &> /dev/null || :
 
 
 %changelog
-* Thu Aug 08 2019 Jan Grulich <jgrulich@redhat.com> - 6:4.14.8-11
-- KConfig: malicious .desktop files would execute code
-  Resolves: bz#1740736
-
-* Thu Jun 06 2019 Jan Grulich <jgrulich@redhat.com> - 6:4.14.8-10
-- Do not fork konsole process when opening terminal from apps using dolphin-part
-  Resolves: bz#1710362
-
-* Wed Jun 05 2019 Jan Grulich <jgrulich@redhat.com> - 6:4.14.8-9
-- Do not fork konsole process when opening terminal from apps using dolphin-part
-  Resolves: bz#1710362
-
-* Mon Apr 29 2019 Jan Grulich <jgrulich@redhat.com> - 6:4.14.8-8
-- Disable JAR repack script to avoid multilib regression
-  Resolves: bz#1542864
-
-* Mon Feb 11 2019 Jan Grulich <jgrulich@redhat.com> - 6:4.14.8-7
-- Handle case-sensitive mime types
-  Resolves: bz#1542864
-
-* Thu May 18 2017 Jan Grulich <jgrulich@redhat.com> - 6:4.14.8-6
-- KAuth: verify that whoever is calling us is actually who he says he is (CVE-2017-8422)
-  Resolves: CVE-2017-8422
-
-* Tue Feb 02 2016 Jan Grulich <jgrulich@redhat.com> - 6:4.14.8-5
-- Fix required kde-runtime version in macros.kdelibs4
-  Resolves: bz#1289241
-
-* Tue Jul 21 2015 Jan Grulich <jgrulich@redhat.com> - 6:4.14.8-4
+* Tue Jul 21 2015 Jan Grulich <jgrulich@redhat.com> - 6:4.14.9-4
 - Restore old patch for proper restoring of print setting
   Resolves: bz#1197804
 
-* Fri Jun 05 2015 Jan Grulich <jgrulich@redhat.com> - 6:4.14.8-3
+* Fri Jun 05 2015 Jan Grulich <jgrulich@redhat.com> - 6:4.14.9-3
 - Drop nepomuk subpackages
 
 * Wed May 27 2015 Jan Grulich <jgrulich@redhat.com> - 6:4.14.8-2
