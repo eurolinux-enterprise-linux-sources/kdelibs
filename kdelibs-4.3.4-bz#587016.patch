@@ -1,0 +1,72 @@
+diff --git a/khtml/khtml_printsettings.cpp b/khtml/khtml_printsettings.cpp
+index 37cdb38..ab47a8e 100644
+--- a/khtml/khtml_printsettings.cpp
++++ b/khtml/khtml_printsettings.cpp
+@@ -106,5 +106,19 @@ bool KHTMLPrintSettings::printHeader()
+ 	return m_printheader->isChecked();
+ }
+
++void KHTMLPrintSettings::setprintFriendly(bool b)
++{
++   m_printfriendly->setChecked(b);
++}
++
++void KHTMLPrintSettings::setprintImages(bool b)
++{
++   m_printimages->setChecked(b);
++}
++
++void KHTMLPrintSettings::setprintHeader(bool b)
++{
++   m_printheader->setChecked(b);
++}
+
+ #include "khtml_printsettings.moc"
+diff --git a/khtml/khtml_printsettings.h b/khtml/khtml_printsettings.h
+index 0ed825e..562ace8 100644
+--- a/khtml/khtml_printsettings.h
++++ b/khtml/khtml_printsettings.h
+@@ -35,6 +35,10 @@ public:
+         bool printImages();
+         bool printHeader();
+
++        void setprintFriendly(bool);
++        void setprintImages(bool);
++        void setprintHeader(bool);
++
+ private:
+ 	QCheckBox	*m_printfriendly;
+ 	QCheckBox	*m_printimages;
+diff --git a/khtml/khtmlview.cpp b/khtml/khtmlview.cpp
+index 1ac2339..6c9750e 100644
+--- a/khtml/khtmlview.cpp
++++ b/khtml/khtmlview.cpp
+@@ -3031,6 +3031,14 @@ void KHTMLView::print(bool quick)
+     if(!root) return;
+
+     QPointer<KHTMLPrintSettings> printSettings(new KHTMLPrintSettings); //XXX: doesn't save settings between prints like this
++
++    // read print settings
++    KSharedConfigPtr config = KGlobal::config();
++    KConfigGroup group(config, "KHTML Print Settings");
++    printSettings->setprintFriendly(group.readEntry("PrintFriendly", true));
++    printSettings->setprintImages(group.readEntry("PrintImages", true));
++    printSettings->setprintHeader(group.readEntry("PrintHeader", true));
++
+     const QPointerDeleter settingsDeleter(printSettings); //the printdialog takes ownership of the settings widget, thus this workaround to avoid double deletion
+     QPrinter printer;
+     QPointer<QPrintDialog> dialog = KdePrint::createPrintDialog(&printer, KdePrint::SystemSelectsPages, QList<QWidget*>() << printSettings.data(), this);
+@@ -3042,6 +3050,13 @@ void KHTMLView::print(bool quick)
+         docname = KStringHandler::csqueeze(docname, 80);
+
+     if(quick || (dialog->exec() && dialog)) { /*'this' and thus dialog might have been deleted while exec()!*/
++        // write HTML settings
++        KSharedConfigPtr config = KGlobal::config();
++        KConfigGroup group(config, "KHTML Print Settings");
++        group.writeEntry("PrintFriendly", printSettings->printFriendly());
++        group.writeEntry("PrintImages", printSettings->printImages());
++        group.writeEntry("PrintHeader", printSettings->printHeader());
++
+         viewport()->setCursor( Qt::WaitCursor ); // only viewport(), no QApplication::, otherwise we get the busy cursor in kdeprint's dialogs
+         // set up KPrinter
+         printer.setFullPage(false);

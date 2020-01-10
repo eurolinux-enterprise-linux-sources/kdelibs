@@ -1,0 +1,14 @@
+%kdelibs4 @@NAME@@
+%kdelibs4_epoch @@EPOCH@@
+%kdelibs4_version @@VERSION@@
+%kdelibs4_evr @@EVR@@
+
+%kdelibs4_requires \
+Requires: kdelibs4%{?_isa} >= %{kdelibs4_version} \
+%{nil}
+
+%kde_applications_version @@KDE_APPLICATIONS_VERSION@@
+
+%kde_runtime_requires \
+Requires: kde-runtime >= 4.10.5 \
+%{nil}

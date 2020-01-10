@@ -1,0 +1,32 @@
+--- ./kdelibs-4.10.5/kimgio/CMakeLists.txt	2014-01-24 16:40:49.341274501 +0100
++++ ./kdelibs-4.10.5/kimgio/CMakeLists.txt	2014-01-24 16:41:14.783208049 +0100
+@@ -75,6 +75,7 @@ install(TARGETS kimg_xcf  DESTINATION ${
+ ##################################
+ 
+ set(kimg_dds_LIB_SRCS dds.cpp)
++set_property(SOURCE dds.cpp APPEND_STRING PROPERTY COMPILE_FLAGS " -fno-strict-aliasing ")
+ kde4_add_plugin(kimg_dds ${kimg_dds_LIB_SRCS})
+ target_link_libraries(kimg_dds ${KDE4_KDECORE_LIBS} ${QT_QTGUI_LIBRARY})
+ 
+--- ./kdelibs-4.10.5/kdeui/CMakeLists.txt	2014-01-24 16:41:31.938163283 +0100
++++ ./kdelibs-4.10.5/kdeui/CMakeLists.txt	2014-01-24 16:41:56.394099521 +0100
+@@ -298,6 +298,8 @@ set(kdeui_LIB_SRCS
+  xmlgui/kxmlguiversionhandler.cpp
+ )
+ 
++set_property(SOURCE util/kcrash.cpp APPEND_STRING PROPERTY COMPILE_FLAGS " -fno-strict-aliasing ")
++
+ if(NOT KDE_NO_DEPRECATED)
+ set(kdeui_LIB_SRCS
+  ${kdeui_LIB_SRCS}
+--- ./kdelibs-4.10.5/kdecore/CMakeLists.txt	2014-01-24 16:37:45.921751058 +0100
++++ ./kdelibs-4.10.5/kdecore/CMakeLists.txt	2014-01-24 16:40:17.417357991 +0100
+@@ -292,6 +292,8 @@ set(kdecore_LIB_SRCS
+    sonnet/globals.cpp
+ )
+ 
++set_property(SOURCE services/kmimetyperepository.cpp APPEND_STRING PROPERTY COMPILE_FLAGS " -fno-strict-aliasing ")
++
+ if (NOT KDECORE_NO_KDE3SUPPORT)
+    set(kdecore_LIB_SRCS ${kdecore_LIB_SRCS}
+       network/k3socketdevice.cpp # must be before the rest of network/, for enable-final

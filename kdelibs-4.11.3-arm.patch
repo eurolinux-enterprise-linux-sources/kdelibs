@@ -1,0 +1,15 @@
+diff -up kdelibs-4.11.3/plasma/corona.cpp.than kdelibs-4.11.3/plasma/corona.cpp
+--- kdelibs-4.11.3/plasma/corona.cpp.than	2013-12-02 16:46:19.542820822 +0100
++++ kdelibs-4.11.3/plasma/corona.cpp	2013-12-02 17:53:04.919830893 +0100
+@@ -388,7 +388,11 @@ void Corona::addOffscreenWidget(QGraphic
+     }
+ 
+     d->offscreenWidgets[i] = widget;
++#if defined(arm) || defined(__arm__)
++    widget->setPos((-i - 1) * 2000, -2000);
++#else
+     widget->setPos((-i - 1) * QWIDGETSIZE_MAX, -QWIDGETSIZE_MAX);
++#endif
+ 
+     QGraphicsWidget *pw = widget->parentWidget();
+     widget->setParentItem(0);

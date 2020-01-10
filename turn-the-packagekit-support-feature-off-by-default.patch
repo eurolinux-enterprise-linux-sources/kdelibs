@@ -1,0 +1,35 @@
+From e87117d7074b112f46a7c9ebc66422c581c64fc1 Mon Sep 17 00:00:00 2001
+From: Aaron Seigo <aseigo@kde.org>
+Date: Wed, 5 Jun 2013 15:26:47 +0200
+Subject: [PATCH] turn the packagekit support feature off by default
+
+it only works on fedora, there is no way to tell the dialog to not show
+again. these are fixable, but they aren't fixed yet and may not be for
+a while and i'd rather not annoy people for the lifetime of 4.11
+---
+ plasma/CMakeLists.txt | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/plasma/CMakeLists.txt b/plasma/CMakeLists.txt
+index 674550d..eeda974 100644
+--- a/plasma/CMakeLists.txt
++++ b/plasma/CMakeLists.txt
+@@ -6,14 +6,11 @@ if(KDE_PLATFORM_FEATURE_BINARY_COMPATIBLE_FEATURE_REDUCTION)
+     set(PLASMA_NO_KNEWSTUFF TRUE)
+     set(PLASMA_NO_SOLID TRUE)
+     set(PLASMA_NO_KIO TRUE)
+-    set(PLASMA_NO_PACKAGEKIT TRUE)
+     set(PLASMA_NO_KUTILS TRUE)
+     set(PLASMA_NO_GLOBAL_SHORTCUTS TRUE)
+ endif(KDE_PLATFORM_FEATURE_BINARY_COMPATIBLE_FEATURE_REDUCTION)
+ 
+-if(NOT Q_WS_X11)
+-    set(PLASMA_NO_PACKAGEKIT TRUE)
+-endif(NOT Q_WS_X11)
++set(PLASMA_NO_PACKAGEKIT TRUE)
+ 
+ include_directories(${CMAKE_CURRENT_SOURCE_DIR}
+                     ${KDE4_KDECORE_INCLUDES}
+-- 
+1.8.3.1
+

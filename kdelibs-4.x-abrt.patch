@@ -1,0 +1,12 @@
+diff -up kdelibs-4.10.0/kdeui/kernel/kapplication.cpp.me kdelibs-4.10.0/kdeui/kernel/kapplication.cpp
+--- kdelibs-4.10.0/kdeui/kernel/kapplication.cpp.me	2013-02-28 15:24:41.194954639 +0100
++++ kdelibs-4.10.0/kdeui/kernel/kapplication.cpp	2013-02-28 15:40:44.546470405 +0100
+@@ -853,7 +853,7 @@ void KApplicationPrivate::parseCommandLi
+     if (!nocrashhandler && args->isSet("crashhandler"))
+     {
+         // enable drkonqi
+-        KCrash::setDrKonqiEnabled(true);
++        KCrash::setDrKonqiEnabled(false);
+     }
+     // Always set the app name, can be usefuls for apps that call setEmergencySaveFunction or enable AutoRestart
+     KCrash::setApplicationName(args->appName());
