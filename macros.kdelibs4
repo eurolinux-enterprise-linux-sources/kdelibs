@@ -10,5 +10,5 @@ Requires: kdelibs4%{?_isa} >= %{kdelibs4_version} \
 %kde_applications_version @@KDE_APPLICATIONS_VERSION@@
 
 %kde_runtime_requires \
-Requires: kde-runtime >= %{kde_applications_version} \
+Requires: kde-runtime >= 4.10.5 \
 %{nil}

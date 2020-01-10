@@ -40,7 +40,7 @@ Summary: KDE Libraries
 # shipped with kde applications, version...
 %global apps_version 15.04.1
 Version: 4.14.8
-Release: 4%{?dist}
+Release: 5%{?dist}
 
 Name: kdelibs
 Epoch: 6
@@ -793,11 +793,15 @@ update-mime-database %{_datadir}/mime &> /dev/null || :
 
 
 %changelog
-* Tue Jul 21 2015 Jan Grulich <jgrulich@redhat.com> - 6:4.14.9-4
+* Tue Feb 02 2016 Jan Grulich <jgrulich@redhat.com> - 6:4.14.8-5
+- Fix required kde-runtime version in macros.kdelibs4
+  Resolves: bz#1304702
+
+* Tue Jul 21 2015 Jan Grulich <jgrulich@redhat.com> - 6:4.14.8-4
 - Restore old patch for proper restoring of print setting
   Resolves: bz#1197804
 
-* Fri Jun 05 2015 Jan Grulich <jgrulich@redhat.com> - 6:4.14.9-3
+* Fri Jun 05 2015 Jan Grulich <jgrulich@redhat.com> - 6:4.14.8-3
 - Drop nepomuk subpackages
 
 * Wed May 27 2015 Jan Grulich <jgrulich@redhat.com> - 6:4.14.8-2
